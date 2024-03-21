@@ -185,22 +185,6 @@ def check_around_2(i, empty_list):
         visited_list.append(down)
     return visited_list        
 
-def check_around_1(i, empty_list, target):
-    visited_list = []
-    up = Coord(i.r - 1, i.c) if i.r-1 >= 0 else Coord(10, i.c)
-    left = Coord(i.r, i.c - 1) #if i.c-1 >= 0 else Coord(i.r, 10)
-    right = Coord(i.r, i.c + 1) #if i.c-1 >= 10 else Coord(i.r, 0)
-    down = Coord(i.r + 1, i.c) if i.r+1 <= 10 else Coord(0,i.c)
-    if left in empty_list:
-        visited_list.append(left)
-    if right in empty_list:
-        visited_list.append(right)
-    if up in empty_list:
-        visited_list.append(up)
-    if down in empty_list:
-        visited_list.append(down)
-    
-    return visited_list 
 
 
 
