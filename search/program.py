@@ -74,7 +74,7 @@ def search(
         res = relative_shape(i, Curr_Empty)
         # 遍历当下结果， 将i作为parent， 记录在内， num_of_search 初始值为1
         for j in res:
-            action = creat_Action(i,j, target, num_of_search, Curr_Empty)
+            action = creat_Action([i],j, target, num_of_search, Curr_Empty)
             heapq.heappush(OpenAction, action)
       
     # 查看priority heap中的f值
@@ -99,15 +99,15 @@ def search(
         #什么时候更新board， 是否需要重新赋值， 尚且不明
         (board, Curr_Empty, update) = update_state(board, currentNode)
 
-        children = get_valid_action(Curr_Empty, update[0])
+        # 已在函数内部构件好，action，此时的children是[Action]
+        children = get_valid_action(update[0], Curr_Empty, target, num_of_search, currentNode)
         for child in children:
-            if i in closeList:
+            if child in closeList:
                 continue  
             if child in OpenAction:
                 if child.numG > num_of_search:
                     continue
             else :
-                action = creat_Action(currentNode,child,target, currentNode.numG+1,Curr_Empty)
                 heapq.heappush(OpenAction, action)  
     
     
@@ -127,7 +127,7 @@ def search(
     ]
 
 # 创建Action对象
-def creat_Action(parent, loc,target, num_of_search, empty_list):
+def creat_Action(parent, loc, target, num_of_search, empty_list):
     current_H = calculate_H(target, loc) ## 距离row/ column最短的地方, 返回值是[sign， 距离row或者column最短距离]
     print(current_H)
     H1 = current_H[1] #距离row或者col最短的距离
@@ -158,17 +158,19 @@ def calculate_H2(empty_list, target, row_or_column):
      
 
     
-# 得到所有可用的action
-def get_valid_action(red_Loc, Curr_Empty):
+# 得到所有可用的action， 用于搜索算法的循环中
+def get_valid_action(red_Loc, Curr_Empty, target, num_of_search, parent):
     connect=[]
     for i in red_Loc:
         temp = check_around_2(i, Curr_Empty)
         connect.extend(temp)
     valid_action = []
     for i in connect:
-        res = []
         res = relative_shape(i, Curr_Empty)
-        valid_action.extend(res)
+        for j in res:
+           action = creat_Action(parent,j,target, num_of_search, Curr_Empty)
+           valid_action.append(action)
+    # 返回一个action的list
     return valid_action
     
 
