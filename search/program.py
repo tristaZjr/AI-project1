@@ -108,7 +108,7 @@ def search(
     if flag == True:
         print("No solutions!")    
             
-   optimal = find_optimal(solutions)
+    optimal = find_optimal(solutions)
     result = []
     for actions in optimal:
         result.append(PlaceAction(actions[0], actions[1], actions[2], actions[3]))
