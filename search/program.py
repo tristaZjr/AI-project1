@@ -49,7 +49,7 @@ def search(
     red_Loc = [] #存储红色坐标的坐标
     Curr_Empty = [] #目前没颜色的坐标
     blue_Loc = [] # 蓝色的坐标
-    num_of_search = 0
+    num_of_search = 1 # G
     
     state = find_red(board)
     red_Loc= state[0]
@@ -72,10 +72,12 @@ def search(
     OpenAction = []
     for i in connect:
         res = relative_shape(i, Curr_Empty)
+        # 遍历当下结果， 将i作为parent， 记录在内， num_of_search 初始值为1
         for j in res:
-            action = creat_Action(i,j, target,num_of_search, Curr_Empty)
+            action = creat_Action(i,j, target, num_of_search, Curr_Empty)
             heapq.heappush(OpenAction, action)
       
+    # 查看priority heap中的f值
     closeList = []
     while OpenAction:
        print(heapq.heappop(OpenAction).numF)
@@ -85,6 +87,7 @@ def search(
     while OpenAction:
         currentNode = heapq.heappop(OpenAction)
         heapq.heappush(closeList, currentNode)
+        num_of_search +=1
 
         for i in currentNode.locs:
            if i == target:
@@ -93,9 +96,10 @@ def search(
         if flag:
            break
         
-        (eliminated_board, new_empty_list_1, update) = update_state(board, currentNode)
+        #什么时候更新board， 是否需要重新赋值， 尚且不明
+        (board, Curr_Empty, update) = update_state(board, currentNode)
 
-        children = get_valid_action(new_empty_list_1, update[0])
+        children = get_valid_action(Curr_Empty, update[0])
         for child in children:
             if i in closeList:
                 continue  
@@ -103,7 +107,7 @@ def search(
                 if child.numG > num_of_search:
                     continue
             else :
-                action = creat_Action(currentNode,child,target, currentNode.numG+1,new_empty_list_1)
+                action = creat_Action(currentNode,child,target, currentNode.numG+1,Curr_Empty)
                 heapq.heappush(OpenAction, action)  
     
     
@@ -122,10 +126,12 @@ def search(
         PlaceAction(Coord(5, 8), Coord(6, 8), Coord(7, 8), Coord(8, 8)),
     ]
 
+# 创建Action对象
 def creat_Action(parent, loc,target, num_of_search, empty_list):
     current_H = calculate_H(target, loc) ## 距离row/ column最短的地方, 返回值是[sign， 距离row或者column最短距离]
-    H1 = current_H[1]
-    H2 = calculate_H2(empty_list,target, current_H[0]) # 用sign去判断所占格子的数量
+    print(current_H)
+    H1 = current_H[1] #距离row或者col最短的距离
+    H2 = calculate_H2(empty_list,target, current_H[0]) # 用sign去判断是算row所占格子的数量还是column所占格子
     current_fn = calculate_F(num_of_search, H1, H2) # num_of_search: G
     action = Action(parent, current_fn, loc, num_of_search, H1, H2)
     return action
@@ -147,7 +153,8 @@ def calculate_H2(empty_list, target, row_or_column):
         return num_r
     if row_or_column < 0:
         return num_c
-    return max(num_c, num_r)
+    # 如果说到row和column的距离一样， 选择待填数量小的
+    return min(num_c, num_r)
      
 
     
@@ -165,6 +172,8 @@ def get_valid_action(red_Loc, Curr_Empty):
     return valid_action
     
 
+# 从一个board 中找到所有的red
+
 def find_red(board):
     red_Loc = []
     blue_Loc = []
@@ -175,6 +184,7 @@ def find_red(board):
            blue_Loc.append(i)
     return [red_Loc,blue_Loc]
 
+# 从一个board 中找到所有的empty值
 
 def find_Curr_empty(red_Loc, blue_Loc):
     Curr_Empty = []
@@ -187,6 +197,7 @@ def find_Curr_empty(red_Loc, blue_Loc):
                 Curr_Empty.append(loc)
     return Curr_Empty
 
+# 找到红色周围所有的没颜色的值
 def check_around_2(i, empty_list):
     visited_list = []
     up = Coord(i.r - 1, i.c) if i.r-1 >= 0 else Coord(10, i.c)
@@ -262,31 +273,38 @@ def return_shape(shape, loc, Non_color):
 
 
 
+# 计算H， 用每一组坐标中跟row 或者column最近的坐标计算距离
 def calculate_H(target, locs):
     print(locs)
     row  = min(abs(loc.r-target.r) for loc in locs)
     col = min(abs(loc.c - target.c) for loc in locs)
+    # 如果说row比col的距离少， 返回正数， 加上value
     if row < col:
         return [1,row]
+    # 离col的距离少，返回负数作为sign， 后跟value
     elif col > row:
         return [-1,col]
+    # 俩者一样， 返回0， 给一个value就行
     else:
         return [0, col]
     
 
-
+# 计算F的值， F=H1 + H2
 def calculate_F(G, H1, H2):
     f = H1 + H2
     return f
 
+#更新现有的board， 未测试版（不知道有无bug）
 def update_state(board, action):
         new_board = update_board(board, action) # find the board after change the color of location of action to red
         update = find_red(new_board) # after change, find the red_list and blue_list
         new_empty_list = find_Curr_empty(update[0], update[1]) # find the location without color
+
+        # 检查是否有行或者列需要被消除
         eliminated_board = eliminate_line(new_empty_list) # check if there exist row or column can be eliminated and eliminate
         update = find_red(eliminated_board) # after eliminate, find the red and blue list
         new_empty_list_1 = find_Curr_empty(update[0], update[1]) # update the empty list after eliminated
-        return [eliminated_board, new_empty_list_1, update]
+        return (eliminated_board, new_empty_list_1, update)
 
 
 def update_board(board, action):
@@ -295,37 +313,43 @@ def update_board(board, action):
         board[i] == 'r' 
     return board
 
-
+# 用empty_list检查是否有一行/列全都不在empty_list中， 如果有，消掉
 def eliminate_line(empty_list, board):
     r =[]
     c =[]
+    # 10行/列， 一行一行查
     for i in range(11):
         flag_r = True
         flag_c = True
-        # determine if  ith column is all empty list
+        # determine if ith column is all empty list
+        # 如果在empty_list里面找到了一列中任何一个坐标， flag为false， 说明该行/列未填满
         for j in range(11):
             loc = Coord(i,j)
-            if not (loc in empty_list):
+            if loc in empty_list:
                 flag_c = False
                 break
         # determine if ith row is all in empty list
         for z in range(11):
             loc =  Coord(z,i)
-            if not(loc in empty_list):
+            if loc in empty_list:
                 flag_r = False
                 break
-        if not flag_r:
+        # 如果flag循环过后， flag依旧为True， 说明一行/列都有颜色， 可以被消除
+        if flag_r:
             r.append(i)
-        if not flag_c:
+        if flag_c:
             c.append(i)
-    for i in r:
-        for j in board.keys():
-            if board[j].r == i:
-                board[j] == None
-    for i in c:
-        for j in board.keys():
-            if board[j].c == i:
-                board[j] == None
+    # 更改board的颜色
+    if r:
+        for i in r:
+            for j in board.keys():
+                if board[j].r == i:
+                    board[j] == None
+    if c:
+        for i in c:
+            for j in board.keys():
+                if board[j].c == i:
+                    board[j] == None
     return board
 
     
