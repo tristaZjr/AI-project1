@@ -9,14 +9,15 @@ import math
 import heapq
 
 class Action:
-    def __init__(self, Parent, numF, locs, numG, numH):
+    def __init__(self, Parent, numF, locs, numG, numH, H2):
         self.Parent = Parent
         self.numF = numF
         self.locs = locs
         self.numG = numG
         self.numH = numH
+        self.H2 = H2
     def __lt__(self, other):
-        return self.numF < other.numF
+        return (self.numH + self.H2) < (other.numH + other.H2)
 
 
 
@@ -68,23 +69,18 @@ def search(
     #  creat instance of point
     
     # 遍历可以连接图形的坐标， 找到当前所有可以进行的action
-    valid_action = []
-    for i in connect:
-        res = []
-        res = relative_shape(i, Curr_Empty)
-        valid_action.extend(res)
-    
-    print(valid_action)
     OpenAction = []
+    for i in connect:
+        res = relative_shape(i, Curr_Empty)
+        for j in res:
+            action = creat_Action(i,j, target,num_of_search, Curr_Empty)
+            heapq.heappush(OpenAction, action)
+      
     closeList = []
-    for loc in valid_action:
-        current_fn = calculate_fn(target, num_of_search, loc)
-        h = min(calculate_distance(i, target) for i in loc)
-        heapq.heappush(OpenAction, Action(None, current_fn, loc, num_of_search, h))
+    while OpenAction:
+       print(heapq.heappop(OpenAction).numF)
     
-   #while OpenAction:
-    #   print(heapq.heappop(OpenAction).numF)
-    """
+    
     flag = False
     while OpenAction:
         currentNode = heapq.heappop(OpenAction)
@@ -96,21 +92,20 @@ def search(
                 break
         if flag:
            break
+        
+        (eliminated_board, new_empty_list_1, update) = update_state(board, currentNode)
 
-        (new_board, empty_list, updated_red) = update_state(board, currentNode)
-
-        children = get_valid_action(empty_list, updated_red[0])
+        children = get_valid_action(new_empty_list_1, update[0])
         for child in children:
             if i in closeList:
-                continue
-            numG = currentNode.numG+ 1
-            numH = min(calculate_distance(loc, target) for loc in child)
-            numF = child.g + child.h    
+                continue  
             if child in OpenAction:
-                if child.g > num_of_search:
+                if child.numG > num_of_search:
                     continue
-            heapq.heappush(OpenAction, Action(currentNode,numF, child, numG, numH))  
-    """
+            else :
+                action = creat_Action(currentNode,child,target, currentNode.numG+1,new_empty_list_1)
+                heapq.heappush(OpenAction, action)  
+    
     
     # ...
     # ... (your solution goes here!)
@@ -127,13 +122,36 @@ def search(
         PlaceAction(Coord(5, 8), Coord(6, 8), Coord(7, 8), Coord(8, 8)),
     ]
 
-def add_to_heap(valid_action, target, num_of_search, OpenAction):
-    for loc in valid_action:
-        current_fn = calculate_fn(target, num_of_search, loc)
-        heapq.heappush(OpenAction, Action(None, current_fn, loc, num_of_search))
-    return OpenAction
-    
+def creat_Action(parent, loc,target, num_of_search, empty_list):
+    current_H = calculate_H(target, loc) ## 距离row/ column最短的地方, 返回值是[sign， 距离row或者column最短距离]
+    H1 = current_H[1]
+    H2 = calculate_H2(empty_list,target, current_H[0]) # 用sign去判断所占格子的数量
+    current_fn = calculate_F(num_of_search, H1, H2) # num_of_search: G
+    action = Action(parent, current_fn, loc, num_of_search, H1, H2)
+    return action
 
+
+# 计算target行或者列没有颜色的数量
+def calculate_H2(empty_list, target, row_or_column):
+    row = target.r 
+    column = target.c
+    num_c =0 
+    num_r = 0
+    # 通过遍历empty——list里面的坐标， 找到emptylist中target行或者列的坐标
+    for i in empty_list:
+        if i.c == column:
+            num_c +=1
+        if i.r == row:
+            num_r +=1
+    if row_or_column > 0: # 选择行中空白的还是列中空白的， 同过计算H1的值
+        return num_r
+    if row_or_column < 0:
+        return num_c
+    return max(num_c, num_r)
+     
+
+    
+# 得到所有可用的action
 def get_valid_action(red_Loc, Curr_Empty):
     connect=[]
     for i in red_Loc:
@@ -241,14 +259,24 @@ def return_shape(shape, loc, Non_color):
         if flag:
             res.append(single_loc)
     return res
-        
-def calculate_distance(loc1, loc2):
-    distance = math.sqrt(abs(loc1.r-loc2.r) + abs(loc1.c-loc2.c))
-    return distance
 
-def calculate_fn(target, g, locs):
-    h = min(calculate_distance(loc, target) for loc in locs)
-    f = g + h
+
+
+def calculate_H(target, locs):
+    print(locs)
+    row  = min(abs(loc.r-target.r) for loc in locs)
+    col = min(abs(loc.c - target.c) for loc in locs)
+    if row < col:
+        return [1,row]
+    elif col > row:
+        return [-1,col]
+    else:
+        return [0, col]
+    
+
+
+def calculate_F(G, H1, H2):
+    f = H1 + H2
     return f
 
 def update_state(board, action):
@@ -259,8 +287,6 @@ def update_state(board, action):
         update = find_red(eliminated_board) # after eliminate, find the red and blue list
         new_empty_list_1 = find_Curr_empty(update[0], update[1]) # update the empty list after eliminated
         return [eliminated_board, new_empty_list_1, update]
-
-
 
 
 def update_board(board, action):
