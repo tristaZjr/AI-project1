@@ -91,6 +91,7 @@ def search(
 
         path = find_Path(currentNode)
         print(currentNode.locs)
+        print(currentNode.f)
 
         # Tace back the board如果选择了这一步之前的action
         remove = []
@@ -175,7 +176,7 @@ def find_Path(node):
 def creat_Action(parent, loc, target, empty_list):
     current_H = calculate_H(target, loc) ## 距离row/ column最短的地方, 返回值是[sign， 距离row或者column最短距离]
     H1 = current_H[1] #距离row或者col最短的距离
-    H2 = calculate_H2(empty_list,target, current_H[0]) # 用sign去判断是算row所占格子的数量还是column所占格子
+    H2 = calculate_H2(empty_list,target, current_H[0], loc) # 用sign去判断是算row所占格子的数量还是column所占格子
     current_fn = calculate_F(H1, H2) # num_of_search: G
     if not isinstance(parent, Action):
         action = Action(parent, current_fn, loc, 1, H1, H2)
@@ -183,9 +184,32 @@ def creat_Action(parent, loc, target, empty_list):
         action = Action(parent, current_fn, loc, parent.g+1, H1, H2)
     return action
 
+# helper function to 计算每个location占据某行的多少行， 多少列
+def helper_cal_H2(locs, target, row_or_col):
+    num_r = 0
+    num_c = 0 
+    # 如果选择列， 则判断此时有多少格子在目标点的列上， 没有则为0
+    col = target.c
+    for i in locs:
+        if i.c == col:
+            num_c+=1
+    if row_or_col<0:
+        return num_c
+    # 如果选择行， 则判断此时有多少格子在目标点点行上， 没有则为0
+    row = target.r
+    for i in locs :
+        if i.r == row:
+            num_r +=1
+    if row_or_col>0:
+        return num_r
+    # 如果此时行和列的距离相等， 将一个action所占的行和列的数量都返回回去，进行下一步判断
+    else:
+        return (num_c, num_r)
+    
+
 
 # 计算target行或者列没有颜色的数量
-def calculate_H2(empty_list, target, row_or_column):
+def calculate_H2(empty_list, target, row_or_column, loc):
     row = target.r 
     column = target.c
     num_c =0 
@@ -197,11 +221,18 @@ def calculate_H2(empty_list, target, row_or_column):
         if i.r == row:
             num_r +=1
     if row_or_column > 0: # 选择行中空白的还是列中空白的， 同过计算H1的值
-        return num_r
-    if row_or_column < 0:
-        return num_c
-    # 如果说到row和column的距离一样， 选择待填数量小的
-    return min(num_c, num_r)
+        return (num_r - helper_cal_H2(loc,target, 1))
+    # 选择列中的空白数， 进行计算
+    elif row_or_column < 0:
+        return (num_c - helper_cal_H2(loc, target, -1))
+    
+    # 如果说到row和column的距离一样， 进一步比较
+    else:
+        (r, c) = helper_cal_H2(loc, target, 0)
+        #此时action距离行和列的距离一样， 比较action后空格数量
+        #num_r 是放置前的空格数量， r是放置后的空格数量
+        return min(num_r-r, num_c-c)
+    
      
 
     
