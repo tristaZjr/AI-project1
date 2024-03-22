@@ -9,15 +9,15 @@ import math
 import heapq
 
 class Action:
-    def __init__(self, Parent, numF, locs, numG, numH, H2):
+    def __init__(self, Parent, f, locs, g, h, h2):
         self.Parent = Parent
-        self.numF = numF
+        self.f = f
         self.locs = locs
-        self.numG = numG
-        self.numH = numH
-        self.H2 = H2
+        self.g = g
+        self.h = h
+        self.h2 = h2
     def __lt__(self, other):
-        return (self.numH + self.H2) < (other.numH + other.H2)
+        return (self.h + self.h2) < (other.h + other.h2)
 
 
 
@@ -49,12 +49,10 @@ def search(
     red_Loc = [] #存储红色坐标的坐标
     Curr_Empty = [] #目前没颜色的坐标
     blue_Loc = [] # 蓝色的坐标
-    num_of_search = 1 # G
     
     state = find_red(board)
     red_Loc= state[0]
     blue_Loc=state[1]
-
 
     # 找到了所有颜色为空的坐标
     Curr_Empty = find_Curr_empty(red_Loc, blue_Loc)
@@ -64,9 +62,7 @@ def search(
     for i in red_Loc:
         temp = check_around_2(i, Curr_Empty)
         connect.extend(temp)
-        
-    print(connect)
-    #  creat instance of point
+   # print(connect)
     
     # 遍历可以连接图形的坐标， 找到当前所有可以进行的action
     OpenAction = []
@@ -74,66 +70,91 @@ def search(
         res = relative_shape(i, Curr_Empty)
         # 遍历当下结果， 将i作为parent， 记录在内， num_of_search 初始值为1
         for j in res:
-            action = creat_Action([i],j, target, num_of_search, Curr_Empty)
+            action = creat_Action([i],j, target, Curr_Empty)
             heapq.heappush(OpenAction, action)
       
-    # 查看priority heap中的f值
-    closeList = []
-    while OpenAction:
-       print(heapq.heappop(OpenAction).numF)
-    
-    
+    # 跟踪树
+    solutions = []
     flag = False
     while OpenAction:
         currentNode = heapq.heappop(OpenAction)
-        heapq.heappush(closeList, currentNode)
-        num_of_search +=1
 
-        for i in currentNode.locs:
-           if i == target:
-                flag == True
-                break
-        if flag:
-           break
+        # 所有解的最后一个node都被记录
+        if currentNode.f==0:
+            flag = False
+            solutions.append(currentNode)
+            continue
         
-        #什么时候更新board， 是否需要重新赋值， 尚且不明
-        (board, Curr_Empty, update) = update_state(board, currentNode)
-
-        # 已在函数内部构件好，action，此时的children是[Action]
-        children = get_valid_action(update[0], Curr_Empty, target, num_of_search, currentNode)
-        for child in children:
-            if child in closeList:
-                continue  
-            if child in OpenAction:
-                if child.numG > num_of_search:
-                    continue
-            else :
-                heapq.heappush(OpenAction, action)  
-    
-    
-    # ...
-    # ... (your solution goes here!)
-
-    # ...
+        # 把action的坐标从空坐标标记为红色
+        for cor in currentNode.locs:
+            red_loc.append(cor)
+            Curr_Empty.remove(cor)
+        # 探测现在的红色方块周围可用坐标
+        for i in red_Loc:
+            temp = check_around_2(i, Curr_Empty)
+            connect.extend(temp)
+        # search下一个level的action
+        flag_ns = False
+        for i in connect:
+            res = relative_shape(i, Curr_Empty)
+            if not res:
+                flag_ns = True
+                continue
+            flag_ns = False
+            for j in res:
+                action = creat_Action(currentNode,j, target, Curr_Empty)
+                heapq.heappush(OpenAction, action)
+    # 存在没有解的情况
+    if flag == True:
+        print("No solutions!")    
+            
+   optimal = find_optimal(solutions)
+    result = []
+    for actions in optimal:
+        result.append(PlaceAction(actions[0], actions[1], actions[2], actions[3]))
+    return result
 
     # Here we're returning hardcoded" actions as an example of the expected
     # output format. Of course, you should instead return the result of your
     # search algorithm. Remember: if no solution is possible for a given input,
     # return `None` instead of a list.
-    return [
+  ''' return [
         PlaceAction(Coord(2, 5), Coord(2, 6), Coord(3, 6), Coord(3, 7)),
         PlaceAction(Coord(1, 8), Coord(2, 8), Coord(3, 8), Coord(4, 8)),
         PlaceAction(Coord(5, 8), Coord(6, 8), Coord(7, 8), Coord(8, 8)),
-    ]
+    ]'''
+
+# 找到最优解的最后一个node
+ def find_optimal(solutions):
+        minG = 156
+        final_solution = []
+        for solution in solutions:
+            if solution.g < minG:
+                minG = solution.g
+                # 这会导致找到的是相同步数的最后一个最优解
+                temp = solution
+        if temp:
+            final_solution。append(find_path(temp))
+        return final_solution
+
+# 找到最优解的path
+    def find_path(node):
+        if len(node.parent) == 1:
+            return node.locs
+        else:
+            path = find_path(node.parent)
+            return path
 
 # 创建Action对象
-def creat_Action(parent, loc, target, num_of_search, empty_list):
+def creat_Action(parent, loc, target, empty_list):
     current_H = calculate_H(target, loc) ## 距离row/ column最短的地方, 返回值是[sign， 距离row或者column最短距离]
-    print(current_H)
     H1 = current_H[1] #距离row或者col最短的距离
     H2 = calculate_H2(empty_list,target, current_H[0]) # 用sign去判断是算row所占格子的数量还是column所占格子
-    current_fn = calculate_F(num_of_search, H1, H2) # num_of_search: G
-    action = Action(parent, current_fn, loc, num_of_search, H1, H2)
+    current_fn = calculate_F(steps, H1, H2) # num_of_search: G
+    if len(parent)==1:
+        action = Action(parent, current_fn, loc, 1, H1, H2)
+    else:
+        action = Action(parent, current_fn, loc, parent.g+1, H1, H2)
     return action
 
 
@@ -277,7 +298,7 @@ def return_shape(shape, loc, Non_color):
 
 # 计算H， 用每一组坐标中跟row 或者column最近的坐标计算距离
 def calculate_H(target, locs):
-    print(locs)
+    #print(locs)
     row  = min(abs(loc.r-target.r) for loc in locs)
     col = min(abs(loc.c - target.c) for loc in locs)
     # 如果说row比col的距离少， 返回正数， 加上value
