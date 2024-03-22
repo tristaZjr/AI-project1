@@ -305,7 +305,7 @@ def calculate_H(target, locs):
     if row < col:
         return [1,row]
     # 离col的距离少，返回负数作为sign， 后跟value
-    elif col > row:
+    elif col < row:
         return [-1,col]
     # 俩者一样， 返回0， 给一个value就行
     else:
