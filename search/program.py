@@ -132,10 +132,10 @@ def search(
         print("No solutions!")    
 
     # 最优路径        
-    optimal = find_optimal(solutions)
+    optimal = find_Optimal(solutions)
     result = []
     for actions in optimal:
-        result.append(PlaceAction(actions[0], actions[1], actions[2], actions[3]))
+       result.append(PlaceAction(actions[0], actions[1], actions[2], actions[3]))
     return result
 
     # Here we're returning hardcoded" actions as an example of the expected
@@ -246,13 +246,14 @@ def find_Curr_empty(red_Loc, blue_Loc):
                 Curr_Empty.append(loc)
     return Curr_Empty
 
+
 # 找到红色周围所有的没颜色的值
 def check_around_2(i, empty_list):
     visited_list = []
-    up = Coord(i.r - 1, i.c) if i.r-1 >= 0 else Coord(10, i.c)
-    left = Coord(i.r, i.c - 1) if i.c-1 >= 0 else Coord(i.r, 10)
-    right = Coord(i.r, i.c + 1) if i.c-1 >= 10 else Coord(i.r, 0)
-    down = Coord(i.r + 1, i.c) if i.r+1 <= 10 else Coord(0,i.c)
+    up = Coord(i.r - 1, i.c) if i.r != 0 else Coord(10, i.c)
+    left = Coord(i.r, i.c - 1) if i.c != 0 else Coord(i.r, 10)
+    right = Coord(i.r, i.c + 1) if i.c != 10 else Coord(i.r, 0)
+    down = Coord(i.r + 1, i.c) if i.r != 10 else Coord(0,i.c)
     if left in empty_list:
         visited_list.append(left)
     if right in empty_list:
@@ -301,8 +302,8 @@ def return_shape(shape, loc, Non_color):
     # 将图形中的一组坐标中四个坐标都作为相对位置的起点（0，0）
     for i in range(len(shape)):
         temp = shape[i]
-        t1 = loc.r - temp[0] if loc.r - temp[0]>= 0 else (loc.r - temp[0])+10
-        t2 = loc.c - temp[1] if loc.c - temp[0]>= 0 else (loc.c - temp[0])+10
+        t1 = loc.r - temp[0] if loc.r - temp[0]>= 0 else (loc.r - temp[0])+10+1
+        t2 = loc.c - temp[1] if loc.c - temp[0]>= 0 else (loc.c - temp[0])+10+1
         single_loc= []
         flag = True
         for j in shape:
