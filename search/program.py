@@ -78,17 +78,41 @@ def search(
     flag = False
     while OpenAction:
         currentNode = heapq.heappop(OpenAction)
-
         # 所有解的最后一个node都被记录
         if currentNode.f==0:
             flag = False
             solutions.append(currentNode)
             continue
-        
-        # 把action的坐标从空坐标标记为红色
-        for cor in currentNode.locs:
-            red_loc.append(cor)
-            Curr_Empty.remove(cor)
+
+        # 比已有解花的步数更多的node就不再继续了
+        if solutions:
+            if solutions[0].g < currentNode.g:
+                continue     
+
+        path = find_Path(currentNode)
+        print(currentNode.locs)
+        # Tace back the board
+        remove = []
+        for cor in red_Loc:
+            clean = False
+            for action in path:
+                if cor not in action:
+                    clean = True
+                else:
+                    clean = False
+            if clean:
+                remove.append(cor)
+        for cor in remove:
+            red_Loc.remove(cor)
+            Curr_Empty.append(cor)
+
+        # 确保Parent的色块不会因为之前的trace back消除
+        for action in path:
+            for cor in action:
+                if not cor in red_Loc:
+                    red_Loc.append(cor)
+                    Curr_Empty.remove(cor)
+
         # 探测现在的红色方块周围可用坐标
         for i in red_Loc:
             temp = check_around_2(i, Curr_Empty)
@@ -107,7 +131,8 @@ def search(
     # 存在没有解的情况
     if flag == True:
         print("No solutions!")    
-            
+
+    # 最优路径        
     optimal = find_optimal(solutions)
     result = []
     for actions in optimal:
@@ -118,40 +143,42 @@ def search(
     # output format. Of course, you should instead return the result of your
     # search algorithm. Remember: if no solution is possible for a given input,
     # return `None` instead of a list.
-  ''' return [
+    '''return [
         PlaceAction(Coord(2, 5), Coord(2, 6), Coord(3, 6), Coord(3, 7)),
         PlaceAction(Coord(1, 8), Coord(2, 8), Coord(3, 8), Coord(4, 8)),
         PlaceAction(Coord(5, 8), Coord(6, 8), Coord(7, 8), Coord(8, 8)),
     ]'''
 
 # 找到最优解的最后一个node
- def find_optimal(solutions):
-        minG = 156
-        final_solution = []
-        for solution in solutions:
-            if solution.g < minG:
-                minG = solution.g
-                # 这会导致找到的是相同步数的最后一个最优解
-                temp = solution
-        if temp:
-            final_solution。append(find_path(temp))
-        return final_solution
+def find_Optimal(solutions):
+    minG = 156
+    final_solution = []
+    for solution in solutions:
+        if solution.g < minG:
+            minG = solution.g
+            # 这会导致找到的是相同步数的最后一个最优解
+            temp = solution
+    if temp:
+        final_solution.append(find_Path(temp))
+    return final_solution
 
 # 找到最优解的path
-    def find_path(node):
-        if len(node.parent) == 1:
-            return node.locs
-        else:
-            path = find_path(node.parent)
-            return path
+def find_Path(node):
+    path = []
+    while isinstance(node.Parent, Action):
+        path.append(node.locs)
+        node = node.Parent
+    path.append(node.locs)
+    path = path[::-1]
+    return path
 
 # 创建Action对象
 def creat_Action(parent, loc, target, empty_list):
     current_H = calculate_H(target, loc) ## 距离row/ column最短的地方, 返回值是[sign， 距离row或者column最短距离]
     H1 = current_H[1] #距离row或者col最短的距离
     H2 = calculate_H2(empty_list,target, current_H[0]) # 用sign去判断是算row所占格子的数量还是column所占格子
-    current_fn = calculate_F(steps, H1, H2) # num_of_search: G
-    if len(parent)==1:
+    current_fn = calculate_F(H1, H2) # num_of_search: G
+    if not isinstance(parent, Action):
         action = Action(parent, current_fn, loc, 1, H1, H2)
     else:
         action = Action(parent, current_fn, loc, parent.g+1, H1, H2)
@@ -224,8 +251,8 @@ def find_Curr_empty(red_Loc, blue_Loc):
 def check_around_2(i, empty_list):
     visited_list = []
     up = Coord(i.r - 1, i.c) if i.r-1 >= 0 else Coord(10, i.c)
-    left = Coord(i.r, i.c - 1) #if i.c-1 >= 0 else Coord(i.r, 10)
-    right = Coord(i.r, i.c + 1) #if i.c-1 >= 10 else Coord(i.r, 0)
+    left = Coord(i.r, i.c - 1) if i.c-1 >= 0 else Coord(i.r, 10)
+    right = Coord(i.r, i.c + 1) if i.c-1 >= 10 else Coord(i.r, 0)
     down = Coord(i.r + 1, i.c) if i.r+1 <= 10 else Coord(0,i.c)
     if left in empty_list:
         visited_list.append(left)
@@ -313,7 +340,7 @@ def calculate_H(target, locs):
     
 
 # 计算F的值， F=H1 + H2
-def calculate_F(G, H1, H2):
+def calculate_F( H1, H2):
     f = H1 + H2
     return f
 
