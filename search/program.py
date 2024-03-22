@@ -91,14 +91,13 @@ def search(
 
         path = find_Path(currentNode)
         print(currentNode.locs)
-        # Tace back the board
+
+        # Tace back the board如果选择了这一步之前的action
         remove = []
         for cor in red_Loc:
-            clean = False
+            clean = True
             for action in path:
-                if cor not in action:
-                    clean = True
-                else:
+                if cor in action:
                     clean = False
             if clean:
                 remove.append(cor)
