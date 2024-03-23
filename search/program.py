@@ -71,36 +71,102 @@ def search(
         # 遍历当下结果， 将i作为parent， 记录在内， num_of_search 初始值为1
         for j in res:
             action = creat_Action([i],j, target, Curr_Empty)
-            heapq.heappush(OpenAction, action)
+            OpenAction.append(action)
+            #heapq.heappush(OpenAction, action)
       
     # 跟踪树
     solutions = []
     flag = False
+    count=0
+    #while OpenAction:
+    #    currentNode = heapq.heappop(OpenAction)
+    #    #print(currentNode.locs)
+    #    #print(currentNode.f)
+    #    print(len(solutions))
+    #    # 比已有解花的步数更多的node就不再继续了
+    #    if solutions:
+    #        if solutions[0].g <= currentNode.g:
+    #            print(len(currentNode))
+    #            break
+
+    #    # 所有解的最后一个node都被记录
+    #    if currentNode.f==0:
+    #        flag = False
+    #        solutions.append(currentNode)
+    #        continue 
+
+        # 测试有几个解，分别是什么，g是多少
+    #    count += 1
+        #print(count)
+        #print(len(solutions))
+        #for actions in solutions:
+        #    print(actions.g)
+        #    print(actions.locs)
+        #print()
+    #    path = find_Path(currentNode)
+
+        # Tace back the board如果选择了这一步之前的action
+    #    remove = []
+    #    for cor in red_Loc:
+    #        clean = True
+    #        for action in path:
+    #            if cor in action:
+    #                clean = False
+    #        if clean:
+    #            remove.append(cor)
+    #    for cor in remove:
+    #        red_Loc.remove(cor)
+    #        Curr_Empty.append(cor)
+
+        # 确保Parent的色块不会因为之前的trace back消除
+    #    for action in path:
+    #        for cor in action:
+    #            if not cor in red_Loc:
+    #                red_Loc.append(cor)
+    #                Curr_Empty.remove(cor)
+
+        # 探测现在的红色方块周围可用坐标
+    #    for i in red_Loc:
+    #        temp = check_around_2(i, Curr_Empty)
+    #        connect.extend(temp)
+        # search下一个level的action
+    #    flag_ns = False
+    #    for i in connect:
+    #        res = relative_shape(i, Curr_Empty)
+    #        if not res:
+    #            flag_ns = True
+    #            continue
+    #        flag_ns = False
+    #        for j in res:
+    #            action = creat_Action(currentNode,j, target, Curr_Empty)
+    #            heapq.heappush(OpenAction, action)
+    #print("done")
+
+    # 存在没有解的情况
+    #if flag == True:
+    #    print("No solutions!")    
+
+    # 最优路径        
+    #optimal = find_Optimal(solutions)
+    #result = []
+    #for actions in optimal:
+    #   result.append(PlaceAction(actions[0], actions[1], actions[2], actions[3]))
+    #return result
+
+
+
+    # BFS 算法
     while OpenAction:
-        currentNode = heapq.heappop(OpenAction)
-        #print(currentNode.locs)
-        #print(currentNode.f)
-
-        # 比已有解花的步数更多的node就不再继续了
-        if solutions:
-            if solutions[0].g <= currentNode.g:
-                continue
-
-        # 所有解的最后一个node都被记录
+        currentNode = OpenAction.pop(0)
+        path = find_Path(currentNode)
+        print(currentNode.locs)
+        print(currentNode.g)
         if currentNode.f==0:
             flag = False
             solutions.append(currentNode)
-            continue 
-
-        # 测试有几个解，分别是什么，g是多少
-        print(len(solutions))
-        for actions in solutions:
-            print(actions.g)
-            print(actions.locs)
-        print()
-        path = find_Path(currentNode)
-
-        # Tace back the board如果选择了这一步之前的action
+            print("solution")
+            print(path)
+            break
         remove = []
         for cor in red_Loc:
             clean = True
@@ -112,15 +178,11 @@ def search(
         for cor in remove:
             red_Loc.remove(cor)
             Curr_Empty.append(cor)
-
-        # 确保Parent的色块不会因为之前的trace back消除
         for action in path:
             for cor in action:
                 if not cor in red_Loc:
                     red_Loc.append(cor)
-                    Curr_Empty.remove(cor)
-
-        # 探测现在的红色方块周围可用坐标
+                    Curr_Empty.remove(cor) 
         for i in red_Loc:
             temp = check_around_2(i, Curr_Empty)
             connect.extend(temp)
@@ -134,19 +196,9 @@ def search(
             flag_ns = False
             for j in res:
                 action = creat_Action(currentNode,j, target, Curr_Empty)
-                heapq.heappush(OpenAction, action)
+                OpenAction.append(action)
+                #heapq.heappush(OpenAction, action)
 
-
-    # 存在没有解的情况
-    if flag == True:
-        print("No solutions!")    
-
-    # 最优路径        
-    optimal = find_Optimal(solutions)
-    result = []
-    for actions in optimal:
-       result.append(PlaceAction(actions[0], actions[1], actions[2], actions[3]))
-    return result
 
     # Here we're returning hardcoded" actions as an example of the expected
     # output format. Of course, you should instead return the result of your
