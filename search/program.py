@@ -56,7 +56,7 @@ def search(
 
     # 找到了所有颜色为空的坐标
     Curr_Empty = find_Curr_empty(red_Loc, blue_Loc)
-    
+
     #找到了红色坐标周围可以连接图形的坐标
     connect=[]
     for i in red_Loc:
@@ -78,20 +78,27 @@ def search(
     flag = False
     while OpenAction:
         currentNode = heapq.heappop(OpenAction)
+        #print(currentNode.locs)
+        #print(currentNode.f)
+
+        # 比已有解花的步数更多的node就不再继续了
+        if solutions:
+            if solutions[0].g <= currentNode.g:
+                continue
+
         # 所有解的最后一个node都被记录
         if currentNode.f==0:
             flag = False
             solutions.append(currentNode)
-            continue
+            continue 
 
-        # 比已有解花的步数更多的node就不再继续了
-        if solutions:
-            if solutions[0].g < currentNode.g:
-                continue     
-
+        # 测试有几个解，分别是什么，g是多少
+        print(len(solutions))
+        for actions in solutions:
+            print(actions.g)
+            print(actions.locs)
+        print()
         path = find_Path(currentNode)
-        print(currentNode.locs)
-        print(currentNode.f)
 
         # Tace back the board如果选择了这一步之前的action
         remove = []
@@ -128,6 +135,8 @@ def search(
             for j in res:
                 action = creat_Action(currentNode,j, target, Curr_Empty)
                 heapq.heappush(OpenAction, action)
+
+
     # 存在没有解的情况
     if flag == True:
         print("No solutions!")    
@@ -203,8 +212,7 @@ def helper_cal_H2(locs, target, row_or_col):
     if row_or_col>0:
         return num_r
     # 如果此时行和列的距离相等， 将一个action所占的行和列的数量都返回回去，进行下一步判断
-    else:
-        return (num_c, num_r)
+    return (num_c, num_r)
     
 
 
@@ -220,6 +228,8 @@ def calculate_H2(empty_list, target, row_or_column, loc):
             num_c +=1
         if i.r == row:
             num_r +=1
+    if num_c == 0 or num_r == 0:
+        return 0
     if row_or_column > 0: # 选择行中空白的还是列中空白的， 同过计算H1的值
         return (num_r - helper_cal_H2(loc,target, 1))
     # 选择列中的空白数， 进行计算
@@ -228,7 +238,7 @@ def calculate_H2(empty_list, target, row_or_column, loc):
     
     # 如果说到row和column的距离一样， 进一步比较
     else:
-        (r, c) = helper_cal_H2(loc, target, 0)
+        (c, r) = helper_cal_H2(loc, target, 0)
         #此时action距离行和列的距离一样， 比较action后空格数量
         #num_r 是放置前的空格数量， r是放置后的空格数量
         return min(num_r-r, num_c-c)
@@ -271,7 +281,7 @@ def find_Curr_empty(red_Loc, blue_Loc):
     for i in range(11):
         for j in range(11):
             loc = Coord(i,j)
-            if loc in red_Loc or loc in blue_Loc:
+            if (loc in red_Loc) or (loc in blue_Loc):
                 continue
             else:
                 Curr_Empty.append(loc)
